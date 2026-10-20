@@ -39,6 +39,7 @@
 | --- | --- |
 | 39442335773（提交 a3d683f，`MoonBit core`） | `failure`：安装工具链、check、build、test 全部通过（四目标各 17 项测试），失败点是 `moon fmt --check` |
 | 失败原因 | CI 装的是 `moonc v0.10.16`，其格式化器把 `Int` 规范化为 `Int32`、把可选参数 `x?` 改写为 `x~`；而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足同一份源码 |
+| 39442878607（提交 926cc76） | `success`：`moonc v0.10.16` 上 check/build/test 四目标通过，每个目标 17 项测试全部通过，四目标示例输出与 `docs/demo-output.txt` 一致 |
 | 处理 | 把格式化从 CI 门禁移除，保留 check/build/test 与四目标示例运行，并在工作流里写明原因 |
 
 ## 交付与限制

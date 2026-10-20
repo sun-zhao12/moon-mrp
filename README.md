@@ -69,6 +69,6 @@ println(result.to_json().stringify())
 
 实现分为显式模型、全量输入检查、拓扑净算/需求贡献、JSON 输出。测试覆盖共享子件、库存与到货抵扣、安全库存、提前期、无效图与引用、输入顺序、整数边界；每目标 17 项具名测试，另以逐个枚举订单数量核对 4,212 组批量输入、以独立库存模拟核对 256 组需求日历。命令结果见 `LOCAL_VALIDATION.md`。
 
-CI 配置覆盖 `moon check`、`moon build`、`moon test` 与四目标示例运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器），Actions 实际结果见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未发布 Mooncakes，也未提交报名。
+CI 配置覆盖 `moon check`、`moon build`、`moon test` 与四目标示例运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器）；线上 CI 在 `moonc v0.10.16` 上四目标各 17 项测试全部通过，运行记录见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未发布 Mooncakes，也未提交报名。
 
 MIT。相邻项目、通用方法与有限检索范围见 [SOURCES.md](SOURCES.md)；不承诺无任何重叠或必然过审。
