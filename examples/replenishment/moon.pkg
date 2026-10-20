@@ -1,0 +1,5 @@
+import {
+  "sun-zhao12/moon-mrp" @mrp,
+}
+
+pkgtype(kind: "executable")
