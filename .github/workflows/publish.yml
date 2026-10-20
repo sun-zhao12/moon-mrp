@@ -17,6 +17,9 @@ concurrency:
   group: mooncakes-publish
   cancel-in-progress: false
 
+env:
+  REGISTRY_MODULE: sun-zhao12/moon-mrp
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -41,6 +44,13 @@ jobs:
             '{token: $t, username: "sun-zhao12"}' > "$HOME/.moon/credentials.json"
           chmod 600 "$HOME/.moon/credentials.json"
           moon whoami
+      - name: Registry state before publishing
+        run: |
+          set -euo pipefail
+          url="https://mooncakes.io/api/v0/modules/${REGISTRY_MODULE}"
+          code=$(curl -s -o registry-before.json -w '%{http_code}' "$url")
+          echo "GET $url -> $code"
+          jq -c '.' registry-before.json 2>/dev/null || cat registry-before.json
       - name: Verify the sources
         run: |
           moon version --all
@@ -49,10 +59,21 @@ jobs:
       - name: Publish
         run: |
           moon publish --dry-run
-          moon publish
-      - name: Read the registry entry back
+          set +e
+          moon publish -v > publish.log 2>&1
+          status=$?
+          set -e
+          tail -80 publish.log
+          echo "moon publish exit code: $status"
+          exit $status
+      - name: Registry state after publishing
+        if: always()
         run: |
           set -euo pipefail
-          url="https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp"
-          body=$(curl -fsS "$url")
-          echo "$body" | jq -r '"registry: " + (.name // "?") + "  version: " + (.version // "?") + "  build_status: " + ((.build_status // "?") | tostring)'
+          url="https://mooncakes.io/api/v0/modules/${REGISTRY_MODULE}"
+          code=$(curl -s -o registry-after.json -w '%{http_code}' "$url")
+          echo "GET $url -> $code"
+          jq -r '"module: " + ((.name // "?") | tostring) +
+                 "  version: " + ((.version // "?") | tostring) +
+                 "  build_status: " + ((.build_status // "?") | tostring)' registry-after.json 2>/dev/null \
+            || cat registry-after.json
