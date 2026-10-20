@@ -16,7 +16,7 @@
 
 ## 本地运行
 
-仓库尚未发布到 Mooncakes，暂时不能 `moon add sun-zhao12/moon-mrp`，按源码目录使用。只依赖工具链自带标准库，无第三方模块依赖。本次验证的工具链是 `moon 0.1.20260920` / `moonc v0.10.14+7d59c7ec9`；Wasm、WasmGC、JS 三个目标已实际构建并运行，Native 需要本机 C 编译器（本次本机 C 编译器编译工具链自带 runtime 失败，详见 `LOCAL_VALIDATION.md`）。
+已发布到 Mooncakes：[`sun-zhao12/moon-mrp` 0.1.0](https://mooncakes.io/modules/sun-zhao12/moon-mrp)，可以直接 `moon add sun-zhao12/moon-mrp`，也可以按下述命令克隆源码运行。只依赖工具链自带标准库，无第三方模块依赖。本次验证的工具链是 `moon 0.1.20260920` / `moonc v0.10.14+7d59c7ec9`；Wasm、WasmGC、JS 三个目标已实际构建并运行，Native 需要本机 C 编译器（本次本机 C 编译器编译工具链自带 runtime 失败，详见 `LOCAL_VALIDATION.md`）。
 
 ```powershell
 git clone https://github.com/sun-zhao12/moon-mrp
@@ -72,21 +72,23 @@ println(result.to_json().stringify())
 
 ## 发布到 Mooncakes
 
-发布账号必须与 `moon.mod` 的命名空间一致（`sun-zhao12`），并且能访问 `https://mooncakes.io`：
+0.1.0 已由 [`.github/workflows/publish.yml`](.github/workflows/publish.yml) 发布：本机只能访问 `github.com`，runner 有完整外网，因此上传在 CI 里完成。工作流用仓库 secret `MOONCAKES_TOKEN` 写入 `~/.moon/credentials.json`，校验源码后执行 `moon publish --dry-run` 与 `moon publish`，最后回读注册表。
+
+发布完成后可核对：
 
 ```powershell
-moon login                  # 用 sun-zhao12 登录 Mooncakes
-moon whoami                 # 应输出 sun-zhao12
-moon publish --dry-run      # 本地打包 + 对压缩包再跑一遍 check
-moon publish
+moon add sun-zhao12/moon-mrp          # 从注册表拉取 0.1.0
+curl https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp
 ```
 
-`--dry-run` 会在 `_build/publish/` 下生成 `sun-zhao12-moon-mrp-0.1.0.zip`（26 个文件，不含 `申报书.md`、`_build` 与 `.github`）并解包复检，最后请求 `https://mooncakes.io/api/v0/publish`。发布后回读 `https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp` 的版本与 `build_status`。若网络只放行部分域名，dry-run 会在最后一步报 `send failed because receiver is gone`，先解决网络再重试。
+回读结果：`version = 0.1.0`、`build_status = success`。发布包 26 个文件，不含 `申报书.md`、`_build` 与 `.github`。
+
+需要发新版本时，改 `moon.mod` 的 `version` 后手动触发 `Publish to Mooncakes`（`workflow_dispatch`，可选 `check_only` 只看注册表），或推送 `v*` 标签。手工发布的等价命令是 `moon login`（sun-zhao12）→ `moon publish --dry-run` → `moon publish`；注意当前的 `moon publish --dry-run` 在服务端返回 `202 Accepted` 之后仍会以非零码退出，这是该版本的行为，不影响正式发布。
 
 ## 实现与验证
 
 实现分为显式模型、全量输入检查、拓扑净算/需求贡献、JSON 输出。测试覆盖共享子件、库存与到货抵扣、安全库存、提前期、无效图与引用、输入顺序、整数边界、JSON 导出字段与 Peg 来源、批量政策边界、UTF-16 排序、重复计算确定性与文档化规模上限；每目标 34 项具名测试，另以逐个枚举订单数量核对 4,212 组批量输入、以独立库存模拟核对 256 组需求日历。命令结果见 `LOCAL_VALIDATION.md`。
 
-CI 配置覆盖 `moon check`、`moon build`、`moon test` 与两个示例的四目标运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器）；线上 CI 在 `moonc v0.10.16` 上四目标各 34 项测试与两个示例全部通过，运行记录见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；**尚未发布 Mooncakes**，也未提交报名。
+CI 配置覆盖 `moon check`、`moon build`、`moon test` 与两个示例的四目标运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器）；线上 CI 在 `moonc v0.10.16` 上四目标各 34 项测试与两个示例全部通过，运行记录见 `LOCAL_VALIDATION.md`。Mooncakes 已发布 0.1.0 且 `build_status = success`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未提交报名。
 
 MIT。相邻项目、通用方法与有限检索范围见 [SOURCES.md](SOURCES.md)；不承诺无任何重叠或必然过审。

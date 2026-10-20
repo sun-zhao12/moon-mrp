@@ -46,10 +46,27 @@
 | 39444422279（提交 cb90b28，13 个提交） | `success`：同上，覆盖模块名、批量政策测试、规模上限测试与文档更新后的最终源码 |
 | 处理 | 格式化不作为 CI 门禁，保留 check/build/test 与示例运行，并在工作流里写明原因；示例改为遍历 `examples/` |
 
+## Mooncakes
+
+| 运行 | 结果 |
+| --- | --- |
+| 39445113425（首试发布） | `failure`：dry-run 返回 `202 Accepted` 后命令以非零码退出，step 被 `-e` 中断，未上传 |
+| 39445304464（加日志重试） | `failure`：确认 `moon publish --dry-run` 在服务端接受后仍退出 255；注册表当时是 404 |
+| 39445457554（忽略 dry-run 退出码） | `success`：`moon publish` 上传成功；回读 `GET https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp` → `200`，`version 0.1.0`，`build_status queued` |
+| 39445623309（`check_only` 回读） | `success`：同一 URL 返回 `200`，`version 0.1.0`，`build_status success` |
+
+发布细节：
+
+- 账号：`moon whoami` → `sun-zhao12`，与 `moon.mod` 的命名空间一致。
+- 凭据：仓库 secret `MOONCAKES_TOKEN`（由 `~/.moon/credentials.json` 写入，未打印）。
+- 包内容：`_build/publish/sun-zhao12-moon-mrp-0.1.0.zip`，26 个文件，**不含 `申报书.md`**、`_build`、`.github`。
+- 为什么在 CI 发布：本机出网只放行 `github.com`（`mooncakes.io` 在 `moon`、`python`、代理各端口上均为 `tls handshake eof` / `502`），runner 有完整外网。
+- 已知工具行为：本版本 `moon publish --dry-run` 在服务端 `202 Accepted` 后仍以非零码退出，工作流因此显式打印它的退出码但不让它阻断正式发布。
+
 ## 交付与限制
 
-已交付独立 `moon.mod` / `moon.pkg`、源码、黑盒测试、生成接口、两个可运行示例、README、语义文档、CHANGELOG、MIT 许可、来源比较、注册表摘要、CI 配置及本地申报书。申报书只留本地，未进入仓库、提交或发布范围。
+已交付独立 `moon.mod` / `moon.pkg`、源码、黑盒测试、生成接口、两个可运行示例、README、语义文档、CHANGELOG、MIT 许可、来源比较、注册表摘要、CI 与发布工作流及本地申报书。申报书只留本地，未进入仓库、提交或发布范围。
 
-**Mooncakes 未发布。** 本机 `moon whoami` 是 `mengshi-12`，而模块名是 `sun-zhao12/moon-mrp`；同时当前环境不允许改写 `~/.moon/credentials.json` 切换账号，且到 `mooncakes.io` 的网络被拦截（`tls handshake eof` / `send failed because receiver is gone`，`python` 与 `moon` 均失败）。因此发布需由本人在可用网络下完成：`moon login`（sun-zhao12）→ `moon publish --dry-run` → `moon publish` → 回读 `https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp`。
+Mooncakes 已发布 `sun-zhao12/moon-mrp@0.1.0`，`build_status = success`，可直接 `moon add sun-zhao12/moon-mrp`。
 
 未报名，未取得初审或官方验收结论。这里是当前开发行为验证，不是完整官方验收报告；有限查重范围和未核实邻居见 `SOURCES.md`。
