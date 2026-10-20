@@ -58,13 +58,14 @@ jobs:
           moon test --deny-warn --target all
       - name: Publish
         run: |
-          moon publish --dry-run
           set +e
-          moon publish -v > publish.log 2>&1
+          echo "--- dry run (this moon version exits non-zero after a 202 Accepted) ---"
+          moon publish --dry-run
+          echo "dry run exit code: $?"
+          echo "--- publish ---"
+          moon publish
           status=$?
-          set -e
-          tail -80 publish.log
-          echo "moon publish exit code: $status"
+          echo "publish exit code: $status"
           exit $status
       - name: Registry state after publishing
         if: always()
