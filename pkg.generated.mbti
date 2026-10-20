@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "fan-ere/moon-mrp"
+package "sun-zhao12/moon-mrp"
 
 import {
   "moonbitlang/core/debug",

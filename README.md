@@ -14,7 +14,7 @@
 
 ## 本地运行
 
-仓库尚未发布到 Mooncakes，暂时不能 `moon add fan-ere/moon-mrp`，按源码目录使用。只依赖工具链自带标准库，无第三方模块依赖。本次验证的工具链是 `moon 0.1.20260920` / `moonc v0.10.14+7d59c7ec9`；Wasm、WasmGC、JS 三个目标已实际构建并运行，Native 需要本机 C 编译器（本次本机 C 编译器编译工具链自带 runtime 失败，详见 `LOCAL_VALIDATION.md`）。
+仓库尚未发布到 Mooncakes，暂时不能 `moon add sun-zhao12/moon-mrp`，按源码目录使用。只依赖工具链自带标准库，无第三方模块依赖。本次验证的工具链是 `moon 0.1.20260920` / `moonc v0.10.14+7d59c7ec9`；Wasm、WasmGC、JS 三个目标已实际构建并运行，Native 需要本机 C 编译器（本次本机 C 编译器编译工具链自带 runtime 失败，详见 `LOCAL_VALIDATION.md`）。
 
 ```powershell
 git clone https://github.com/sun-zhao12/moon-mrp
@@ -44,7 +44,7 @@ let result = @mrp.plan(request).unwrap()
 println(result.to_json().stringify())
 ```
 
-包导入为 `"fan-ere/moon-mrp" @mrp`；完整可编译调用见 `examples/demo`。`plan` 返回 `Result[Plan, PlanningError]`；`order_quantity` 可单独调用，验证非负净需求并执行批量舍入。完整签名见 `pkg.generated.mbti`。
+包导入为 `"sun-zhao12/moon-mrp" @mrp`；完整可编译调用见 `examples/demo`。`plan` 返回 `Result[Plan, PlanningError]`；`order_quantity` 可单独调用，验证非负净需求并执行批量舍入。完整签名见 `pkg.generated.mbti`。
 
 ## 计划语义
 

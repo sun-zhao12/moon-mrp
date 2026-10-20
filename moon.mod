@@ -1,4 +1,4 @@
-name = "fan-ere/moon-mrp"
+name = "sun-zhao12/moon-mrp"
 
 version = "0.1.0"
 
