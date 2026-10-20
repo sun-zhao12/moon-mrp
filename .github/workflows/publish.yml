@@ -1,0 +1,58 @@
+name: Publish to Mooncakes
+
+# Publishing needs egress to mooncakes.io. The development machine used for the
+# rest of this repository can only reach github.com, so the release runs here
+# instead: a runner with normal internet installs the toolchain, writes the
+# Mooncakes credential from a repository secret and publishes moon.mod's version.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v[0-9]*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mooncakes-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install MoonBit stable
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Write Mooncakes credentials
+        env:
+          MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_TOKEN }}
+        run: |
+          if [ -z "$MOONCAKES_TOKEN" ]; then
+            echo "::error::MOONCAKES_TOKEN secret is not set"
+            exit 1
+          fi
+          mkdir -p "$HOME/.moon"
+          jq -n --arg t "$MOONCAKES_TOKEN" \
+            '{token: $t, username: "sun-zhao12"}' > "$HOME/.moon/credentials.json"
+          chmod 600 "$HOME/.moon/credentials.json"
+          moon whoami
+      - name: Verify the sources
+        run: |
+          moon version --all
+          moon check --deny-warn --target all
+          moon test --deny-warn --target all
+      - name: Publish
+        run: |
+          moon publish --dry-run
+          moon publish
+      - name: Read the registry entry back
+        run: |
+          set -euo pipefail
+          url="https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp"
+          body=$(curl -fsS "$url")
+          echo "$body" | jq -r '"registry: " + (.name // "?") + "  version: " + (.version // "?") + "  build_status: " + ((.build_status // "?") | tostring)'
