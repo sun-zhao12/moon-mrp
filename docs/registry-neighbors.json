@@ -1,0 +1,103 @@
+{
+  "matches": [
+    {
+      "name": "001-Elsa/gerberguard",
+      "version": "0.1.0",
+      "description": "A lightweight Gerber PCB manufacturing file inspection and preflight tool written in MoonBit.",
+      "repository": "https://github.com/001-Elsa/gerberguard-mbt",
+      "license": "Apache-2.0",
+      "keywords": [
+        "gerber",
+        "pcb",
+        "eda",
+        "manufacturing",
+        "preflight"
+      ]
+    },
+    {
+      "name": "Bobojy00/moonbit_factory_graph",
+      "version": "0.2.1",
+      "description": "Industrial plant topology, multi-layer material/control/energy flow modeling and failure propagation graph engine in MoonBit.",
+      "repository": "https://github.com/Bobojy00/moonbit-factory-graph",
+      "license": "Apache-2.0",
+      "keywords": [
+        "factory",
+        "graph",
+        "industrial",
+        "topology",
+        "digital-twin",
+        "automation",
+        "manufacturing"
+      ]
+    },
+    {
+      "name": "cn-xjr/moonplan",
+      "version": "0.1.0",
+      "description": "An explainable finite-domain constraint solver and scheduling toolkit for MoonBit.",
+      "repository": "https://github.com/cn-xjr/MoonPlan",
+      "license": "Apache-2.0",
+      "keywords": [
+        "constraint-programming",
+        "scheduling",
+        "solver",
+        "optimization",
+        "wasm"
+      ]
+    },
+    {
+      "name": "ljs448/moonbitJobShop",
+      "version": "0.2.0",
+      "description": "Extensible job-shop scheduling models and heuristics for MoonBit.",
+      "repository": "https://github.com/ljs448/moonbitJobShop",
+      "license": "MIT",
+      "keywords": [
+        "scheduling",
+        "job-shop",
+        "optimization",
+        "manufacturing"
+      ]
+    },
+    {
+      "name": "Mgk789a/moonbit-gerberkit",
+      "version": "0.2.4",
+      "description": "Gerber and Excellon manufacturing data parser, geometry toolkit, and DFM checker",
+      "repository": "https://github.com/Mgk789a/moonbit-gerberkit",
+      "license": "Apache-2.0",
+      "keywords": [
+        "gerber",
+        "excellon",
+        "pcb",
+        "dfm",
+        "manufacturing"
+      ]
+    },
+    {
+      "name": "Milky2018/moonplant",
+      "version": "0.3.2",
+      "description": "A ascii diagram painting library for MoonBit.",
+      "repository": "https://github.com/Milky2018/moonplant.git",
+      "license": "Apache-2.0",
+      "keywords": [
+        "ASCII",
+        "Diagram"
+      ]
+    },
+    {
+      "name": "mwqcodex/moonbitSPC",
+      "version": "0.2.0",
+      "description": "Statistical process control primitives for manufacturing quality data.",
+      "repository": "https://github.com/mwqcodex/moonbitSPC",
+      "license": "MIT",
+      "keywords": [
+        "spc",
+        "quality",
+        "manufacturing",
+        "statistics"
+      ]
+    }
+  ],
+  "pattern": "material.require|\\bmrp\\b|bill.of.material|manufactur|job.shop|moonplan",
+  "module_count": 3156,
+  "registry": "https://mooncakes.io/api/v0/modules",
+  "date": "2026-10-20 Asia/Shanghai"
+}
