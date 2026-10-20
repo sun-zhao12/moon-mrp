@@ -6,6 +6,11 @@ name: Publish to Mooncakes
 # Mooncakes credential from a repository secret and publishes moon.mod's version.
 on:
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Only read the registry entry, do not publish"
+        type: boolean
+        default: false
   push:
     tags:
       - "v[0-9]*"
@@ -28,10 +33,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Install MoonBit stable
+        if: ${{ !inputs.check_only }}
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
       - name: Write Mooncakes credentials
+        if: ${{ !inputs.check_only }}
         env:
           MOONCAKES_TOKEN: ${{ secrets.MOONCAKES_TOKEN }}
         run: |
@@ -44,19 +51,14 @@ jobs:
             '{token: $t, username: "sun-zhao12"}' > "$HOME/.moon/credentials.json"
           chmod 600 "$HOME/.moon/credentials.json"
           moon whoami
-      - name: Registry state before publishing
-        run: |
-          set -euo pipefail
-          url="https://mooncakes.io/api/v0/modules/${REGISTRY_MODULE}"
-          code=$(curl -s -o registry-before.json -w '%{http_code}' "$url")
-          echo "GET $url -> $code"
-          jq -c '.' registry-before.json 2>/dev/null || cat registry-before.json
       - name: Verify the sources
+        if: ${{ !inputs.check_only }}
         run: |
           moon version --all
           moon check --deny-warn --target all
           moon test --deny-warn --target all
       - name: Publish
+        if: ${{ !inputs.check_only }}
         run: |
           set +e
           echo "--- dry run (this moon version exits non-zero after a 202 Accepted) ---"
@@ -67,14 +69,14 @@ jobs:
           status=$?
           echo "publish exit code: $status"
           exit $status
-      - name: Registry state after publishing
+      - name: Read the registry entry back
         if: always()
         run: |
           set -euo pipefail
           url="https://mooncakes.io/api/v0/modules/${REGISTRY_MODULE}"
-          code=$(curl -s -o registry-after.json -w '%{http_code}' "$url")
+          code=$(curl -s -o registry.json -w '%{http_code}' "$url")
           echo "GET $url -> $code"
-          jq -r '"module: " + ((.name // "?") | tostring) +
-                 "  version: " + ((.version // "?") | tostring) +
-                 "  build_status: " + ((.build_status // "?") | tostring)' registry-after.json 2>/dev/null \
-            || cat registry-after.json
+          jq -r '"version: " + ((.version // "?") | tostring) +
+                 "  build_status: " + ((.build_status // "?") | tostring)' registry.json
+          echo "--- keys returned by the registry ---"
+          jq -r 'keys | join(", ")' registry.json
