@@ -70,10 +70,23 @@ println(result.to_json().stringify())
 
 不处理有限机器产能、供应商实际可交付性、替代料、损耗率、小数单位、保质期、成本优化、采购事务或跨批次状态。安全库存和 BOM 由调用方提供，不代表系统替用户决定政策。样例全部虚构。
 
+## 发布到 Mooncakes
+
+发布账号必须与 `moon.mod` 的命名空间一致（`sun-zhao12`），并且能访问 `https://mooncakes.io`：
+
+```powershell
+moon login                  # 用 sun-zhao12 登录 Mooncakes
+moon whoami                 # 应输出 sun-zhao12
+moon publish --dry-run      # 本地打包 + 对压缩包再跑一遍 check
+moon publish
+```
+
+`--dry-run` 会在 `_build/publish/` 下生成 `sun-zhao12-moon-mrp-0.1.0.zip`（26 个文件，不含 `申报书.md`、`_build` 与 `.github`）并解包复检，最后请求 `https://mooncakes.io/api/v0/publish`。发布后回读 `https://mooncakes.io/api/v0/modules/sun-zhao12/moon-mrp` 的版本与 `build_status`。若网络只放行部分域名，dry-run 会在最后一步报 `send failed because receiver is gone`，先解决网络再重试。
+
 ## 实现与验证
 
-实现分为显式模型、全量输入检查、拓扑净算/需求贡献、JSON 输出。测试覆盖共享子件、库存与到货抵扣、安全库存、提前期、无效图与引用、输入顺序、整数边界、JSON 导出字段与 Peg 来源、批量政策边界、UTF-16 排序与重复计算确定性；每目标 30 项具名测试，另以逐个枚举订单数量核对 4,212 组批量输入、以独立库存模拟核对 256 组需求日历。命令结果见 `LOCAL_VALIDATION.md`。
+实现分为显式模型、全量输入检查、拓扑净算/需求贡献、JSON 输出。测试覆盖共享子件、库存与到货抵扣、安全库存、提前期、无效图与引用、输入顺序、整数边界、JSON 导出字段与 Peg 来源、批量政策边界、UTF-16 排序、重复计算确定性与文档化规模上限；每目标 34 项具名测试，另以逐个枚举订单数量核对 4,212 组批量输入、以独立库存模拟核对 256 组需求日历。命令结果见 `LOCAL_VALIDATION.md`。
 
-CI 配置覆盖 `moon check`、`moon build`、`moon test` 与四目标示例运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器）；线上 CI 在 `moonc v0.10.16` 上四目标各 17 项测试全部通过，运行记录见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未发布 Mooncakes，也未提交报名。
+CI 配置覆盖 `moon check`、`moon build`、`moon test` 与两个示例的四目标运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器）；线上 CI 在 `moonc v0.10.16` 上四目标各 34 项测试与两个示例全部通过，运行记录见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；**尚未发布 Mooncakes**，也未提交报名。
 
 MIT。相邻项目、通用方法与有限检索范围见 [SOURCES.md](SOURCES.md)；不承诺无任何重叠或必然过审。
