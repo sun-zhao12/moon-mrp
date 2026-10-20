@@ -27,7 +27,7 @@ moon fmt --check
 moon info
 ```
 
-`moon` 不在 PATH 时，把 `$MOON_HOME\bin` 加进当前进程 PATH 即可；本仓库不安装或改动工具链。
+`moon` 不在 PATH 时，把 `$MOON_HOME\bin` 加进当前进程 PATH 即可；本仓库不安装或改动工具链。`moon fmt --check` 与 `moon info` 只在 0.10.14 工具链上验证通过；换成更新的稳定版后，格式化器会把 `Int` 写成 `Int32`、`x?` 写成 `x~`，出现差异属于工具链版本差异，不是源码错误。
 
 ## API
 
@@ -69,6 +69,6 @@ println(result.to_json().stringify())
 
 实现分为显式模型、全量输入检查、拓扑净算/需求贡献、JSON 输出。测试覆盖共享子件、库存与到货抵扣、安全库存、提前期、无效图与引用、输入顺序、整数边界；每目标 17 项具名测试，另以逐个枚举订单数量核对 4,212 组批量输入、以独立库存模拟核对 256 组需求日历。命令结果见 `LOCAL_VALIDATION.md`。
 
-CI 配置覆盖 `moon check`、`moon build`、`moon test`、`moon fmt --check`、`moon info` 和四目标示例运行。本次本地验证通过 Wasm、WasmGC、JS，Native 受阻于本机 C 编译器（工具链自带 runtime 编译失败），线上 CI 结果以 GitHub Actions 页面为准。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未发布 Mooncakes，也未提交报名。
+CI 配置覆盖 `moon check`、`moon build`、`moon test` 与四目标示例运行。格式化不作为门禁：新版工具链的格式化器会把 `Int` 规范化成 `Int32`、把可选参数 `x?` 改写为 `x~`，而 0.10.14 完全不接受 `Int32`，两代格式化器无法同时满足；源码采用在两者上都能编译的写法。本地验证通过 Wasm、WasmGC、JS（Native 受阻于本机 C 编译器），Actions 实际结果见 `LOCAL_VALIDATION.md`。仓库不含 `申报书.md`（已忽略，仅留本地供本人核对改写）；未发布 Mooncakes，也未提交报名。
 
 MIT。相邻项目、通用方法与有限检索范围见 [SOURCES.md](SOURCES.md)；不承诺无任何重叠或必然过审。
