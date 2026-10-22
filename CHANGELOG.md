@@ -2,29 +2,34 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
-## [0.1.0] - 2026-10-20
+## [0.2.0] - 2026-10-22
 
-首个可运行版本：无限产能假设下的离散周期多层物料需求计划。
+针对首轮评审意见（功能范围偏窄、缺少小数用量/单位换算/损耗与良率/提前期异常处理/批量策略、规模上限过小）的重构版本。
 
 ### Added
 
-- `plan(Request) -> Result[Plan, PlanningError]`：全量输入校验、父项优先的确定性拓扑净算、共享子件合并、逐期毛/净需求与计划订单。
-- `order_quantity(net, LotRule) -> Result[Int64, PlanningError]`：`LotForLot`、`Multiple(m)`、`MinimumMultiple(min, m)` 三种批量政策，可脱离 BOM 单独调用。
-- `Plan::to_json`：`moon-mrp.plan.v1` 结构，数量一律为十进制字符串，避免 JS 数值精度损失。
-- `Peg`：`Demand(id)` 与 `ParentOrder(sku, receipt_bucket)` 两种需求来源，合计等于对应周期的毛需求。
-- `examples/demo`：装配与共享子件、门店补货、供应承诺变更三条工作流，另演示提前期不足与 BOM 成环被拒绝。
-- `examples/replenishment`：单店补货示例，逐期打印计划表并按独立递推断言库存守恒。
-- 测试覆盖：共享子件净算、现货与到货抵扣、安全库存、提前期反推、图验证、输入顺序、整数上限、JSON 字段、批量政策边界、UTF-16 排序、重复计算确定性、文档化规模上限；每目标 34 项具名测试。
-- `docs/semantics.md`：逐期公式、完整数字示例、错误表与上限表。
-- GitHub Actions：`moon check`、`moon build`、`moon test` 覆盖 wasm / wasm-gc / js / native，并运行两个示例。
+- `Qty` 定点数量（3 位小数），工厂方法 `Qty::int` / `Qty::milli`，`to_string` 输出十进制文本；全流程 Int64 溢出检查与向上取整。
+- `Item.yield_per_mille`：良率。订单按 `ceil(net * 1000 / yield)` 放大，`Bucket.received` 记录合格入库量。
+- `Component.scrap_per_mille`：损耗。子件用量按 `(1 + scrap)` 放大后再乘单位用量。
+- `Component.usage_unit` + `Request.conversions`：单位换算（例如 `G -> KG`），缺换算返回 `InvalidConversion` 而不是静默按 1:1。
+- 批量政策扩展为六种：`LotForLot`、`FixedQuantity`、`Multiple`、`MinimumMultiple`、`PeriodOrder(n)`、`MinMax(min, max)`。
+- `ReleasePolicy::{Strict, AllowLate}`：提前期不足时，可选择钳到第 0 期并在 `Plan.incidents` 记录、`Order.late` 标记。
+- `Bucket.received`、`Order.late`、`Incident` 与新字段的 JSON 输出；schema 升为 `moon-mrp.plan.v2`。
+- `docs/scenarios.md`：九组典型场景的对照数字与验证出处；`docs/semantics.md` 重写为 v2 语义。
+- 测试扩到 49 项/目标，新增：小数用量、损耗、良率、换算、POQ、Min-Max、late 策略、独立模拟（324 组单层组合）、规模上限。
 
 ### Changed
 
-- 周期、期号、提前期与索引使用 `Int`，数量使用 `Int64`；`Int` 在 0.10.14 与 0.10.16 两代工具链上都能编译。
-- CI 不以格式化结果作为门禁：两代格式化器对 `Int` 与可选参数记号的规范化不同，同一份源码无法同时满足。
-- 模块名由 `fan-ere/moon-mrp` 改为 `sun-zhao12/moon-mrp`，与发布账号和仓库所有者一致。
+- 规模上限：物料 64→4096、周期 128→1024、BOM 边 4096→100000、单据 10000→100000，提前期上限 4096。
+- 数量上限保持 `10^12` 单位，但单位改为 milli-unit（最小 0.001）。
+- 子件需求改为按父项投产数量（含良率放大）计算，损耗与换算逐步向上取整。
+- README 增加六类工作流、0.1.0→0.2.0 迁移表与场景链接。
 
-### Notes
+### Fixed
 
-- 不处理有限产能、供应商实际可交付性、替代料、损耗率、小数单位、保质期、成本优化、采购事务或跨批次状态。
-- 项目申报书只保留在本地，不进入仓库、Release 或发布包。
+- 0.1.0 中提前期不足只能整体拒绝，无法表达"加急/晚下达"的业务选择。
+- 0.1.0 的整数单位无法表达 2.5 KG 这类真实用量。
+
+## [0.1.0] - 2026-10-20
+
+首个可运行版本：无限产能假设下的离散周期多层物料需求计划。

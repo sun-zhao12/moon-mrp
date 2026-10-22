@@ -6,7 +6,7 @@ import {
 }
 
 // Values
-pub fn order_quantity(Int64, LotRule) -> Result[Int64, PlanningError]
+pub fn order_quantity(Qty, LotRule) -> Result[Qty, PlanningError]
 
 pub fn plan(Request) -> Result[Plan, PlanningError]
 
@@ -15,12 +15,13 @@ pub fn plan(Request) -> Result[Plan, PlanningError]
 // Types and methods
 pub(all) struct Bucket {
   index : Int
-  gross : Int64
-  scheduled : Int64
-  net : Int64
-  planned_receipt : Int64
-  planned_release : Int64
-  projected : Int64
+  gross : Qty
+  scheduled : Qty
+  net : Qty
+  planned_receipt : Qty
+  received : Qty
+  planned_release : Qty
+  projected : Qty
 } derive(Eq, @debug.Debug)
 pub fn Bucket::equal(Self, Self) -> Bool
 pub fn Bucket::not_equal(Self, Self) -> Bool
@@ -29,17 +30,31 @@ pub fn Bucket::to_repr(Self) -> @debug.Repr
 pub(all) struct Component {
   parent : String
   child : String
-  units_per : Int64
+  units_per : Qty
+  usage_unit : String
+  scrap_per_mille : Int
 } derive(Eq, @debug.Debug)
 pub fn Component::equal(Self, Self) -> Bool
 pub fn Component::not_equal(Self, Self) -> Bool
 pub fn Component::to_repr(Self) -> @debug.Repr
 
+pub(all) struct Incident {
+  item : String
+  receipt_bucket : Int
+  required_release : Int
+  actual_release : Int
+} derive(Eq, @debug.Debug)
+pub fn Incident::equal(Self, Self) -> Bool
+pub fn Incident::not_equal(Self, Self) -> Bool
+pub fn Incident::to_repr(Self) -> @debug.Repr
+
 pub(all) struct Item {
   sku : String
-  on_hand : Int64
-  safety_stock : Int64
+  unit : String
+  on_hand : Qty
+  safety_stock : Qty
   lead_time : Int
+  yield_per_mille : Int
   lot : LotRule
 } derive(Eq, @debug.Debug)
 pub fn Item::equal(Self, Self) -> Bool
@@ -56,8 +71,11 @@ pub fn ItemPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) enum LotRule {
   LotForLot
-  Multiple(Int64)
-  MinimumMultiple(Int64, Int64)
+  FixedQuantity(Qty)
+  Multiple(Qty)
+  MinimumMultiple(Qty, Qty)
+  PeriodOrder(Int)
+  MinMax(Qty, Qty)
 } derive(Eq, @debug.Debug)
 pub fn LotRule::equal(Self, Self) -> Bool
 pub fn LotRule::not_equal(Self, Self) -> Bool
@@ -67,7 +85,7 @@ pub(all) struct Movement {
   id : String
   item : String
   bucket : Int
-  quantity : Int64
+  quantity : Qty
 } derive(Eq, @debug.Debug)
 pub fn Movement::equal(Self, Self) -> Bool
 pub fn Movement::not_equal(Self, Self) -> Bool
@@ -77,7 +95,8 @@ pub(all) struct Order {
   item : String
   receipt_bucket : Int
   release_bucket : Int
-  quantity : Int64
+  quantity : Qty
+  late : Bool
 } derive(Eq, @debug.Debug)
 pub fn Order::equal(Self, Self) -> Bool
 pub fn Order::not_equal(Self, Self) -> Bool
@@ -86,7 +105,7 @@ pub fn Order::to_repr(Self) -> @debug.Repr
 pub(all) struct Peg {
   item : String
   bucket : Int
-  quantity : Int64
+  quantity : Qty
   source : Source
 } derive(Eq, @debug.Debug)
 pub fn Peg::equal(Self, Self) -> Bool
@@ -98,6 +117,7 @@ pub(all) struct Plan {
   items : Array[ItemPlan]
   orders : Array[Order]
   pegs : Array[Peg]
+  incidents : Array[Incident]
 } derive(Eq, @debug.Debug)
 pub fn Plan::equal(Self, Self) -> Bool
 pub fn Plan::not_equal(Self, Self) -> Bool
@@ -117,10 +137,34 @@ pub(all) enum PlanningError {
   Cycle(Array[String])
   QuantityLimit(String)
   BeforeHorizon(String, Int, Int)
+  InvalidConversion(String, String)
 } derive(Eq, @debug.Debug)
 pub fn PlanningError::equal(Self, Self) -> Bool
 pub fn PlanningError::not_equal(Self, Self) -> Bool
 pub fn PlanningError::to_repr(Self) -> @debug.Repr
+
+pub(all) struct Qty {
+  milli : Int64
+} derive(Eq, @debug.Debug)
+pub fn Qty::add(Self, Self) -> Self
+pub fn Qty::compare(Self, Self) -> Int
+pub fn Qty::equal(Self, Self) -> Bool
+pub fn Qty::int(Int) -> Self
+pub fn Qty::is_zero(Self) -> Bool
+pub fn Qty::milli(Int64) -> Self
+pub fn Qty::not_equal(Self, Self) -> Bool
+pub fn Qty::sub(Self, Self) -> Self
+pub fn Qty::to_repr(Self) -> @debug.Repr
+pub fn Qty::to_string(Self) -> String
+pub fn Qty::zero() -> Self
+
+pub(all) enum ReleasePolicy {
+  Strict
+  AllowLate
+} derive(Eq, @debug.Debug)
+pub fn ReleasePolicy::equal(Self, Self) -> Bool
+pub fn ReleasePolicy::not_equal(Self, Self) -> Bool
+pub fn ReleasePolicy::to_repr(Self) -> @debug.Repr
 
 pub(all) struct Request {
   horizon : Int
@@ -128,6 +172,8 @@ pub(all) struct Request {
   bom : Array[Component]
   demands : Array[Movement]
   receipts : Array[Movement]
+  conversions : Array[UnitConversion]
+  policy : ReleasePolicy
 } derive(@debug.Debug)
 pub fn Request::to_repr(Self) -> @debug.Repr
 
@@ -138,6 +184,15 @@ pub(all) enum Source {
 pub fn Source::equal(Self, Self) -> Bool
 pub fn Source::not_equal(Self, Self) -> Bool
 pub fn Source::to_repr(Self) -> @debug.Repr
+
+pub(all) struct UnitConversion {
+  from : String
+  to : String
+  factor : Qty
+} derive(Eq, @debug.Debug)
+pub fn UnitConversion::equal(Self, Self) -> Bool
+pub fn UnitConversion::not_equal(Self, Self) -> Bool
+pub fn UnitConversion::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

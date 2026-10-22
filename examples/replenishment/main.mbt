@@ -1,7 +1,12 @@
 ///|
 /// A single-store replenishment run: safety stock, an open purchase order and a
-/// minimum-multiple policy. The same numbers are checked against a hand-written
-/// inventory simulation so the example doubles as an end-to-end assertion.
+/// minimum-multiple policy. The bucket table is checked against an independent
+/// inventory recurrence so the example doubles as an end-to-end assertion.
+fn q(units : Int) -> @mrp.Qty {
+  @mrp.Qty::int(units)
+}
+
+///|
 fn main raise {
   let horizon = 6
   let request : @mrp.Request = {
@@ -9,24 +14,28 @@ fn main raise {
     items: [
       {
         sku: "LABEL",
-        on_hand: 3L,
-        safety_stock: 2L,
+        unit: "EA",
+        on_hand: q(3),
+        safety_stock: q(2),
         lead_time: 1,
-        lot: @mrp.MinimumMultiple(10L, 4L),
+        yield_per_mille: 1000,
+        lot: @mrp.MinimumMultiple(q(10), q(4)),
       },
     ],
     bom: [],
     demands: [
-      { id: "store-a", item: "LABEL", bucket: 2, quantity: 9L, },
-      { id: "store-b", item: "LABEL", bucket: 3, quantity: 3L, },
+      { id: "store-a", item: "LABEL", bucket: 2, quantity: q(9), },
+      { id: "store-b", item: "LABEL", bucket: 3, quantity: q(3), },
     ],
-    receipts: [{ id: "open-po", item: "LABEL", bucket: 1, quantity: 2L, }],
+    receipts: [{ id: "open-po", item: "LABEL", bucket: 1, quantity: q(2), }],
+    conversions: [],
+    policy: @mrp.Strict,
   }
   let plan = request |> @mrp.plan |> Result::unwrap
   println(
     "1 store replenishment (minimum 10, multiple 4, safety stock 2, lead time 1)",
   )
-  println("  bucket gross scheduled net receipt release projected")
+  println("  bucket gross scheduled net receipt received release projected")
   let mut inventory = request.items[0].on_hand
   for bucket in plan.items[0].buckets {
     println(
@@ -41,21 +50,23 @@ fn main raise {
       " " +
       bucket.planned_receipt.to_string() +
       " " +
+      bucket.received.to_string() +
+      " " +
       bucket.planned_release.to_string() +
       " " +
       bucket.projected.to_string(),
     )
-    inventory = inventory +
-      bucket.scheduled +
-      bucket.planned_receipt -
-      bucket.gross
+    inventory = inventory
+      .add(bucket.scheduled)
+      .add(bucket.received)
+      .sub(bucket.gross)
     assert_eq(inventory, bucket.projected)
   }
   assert_eq(plan.orders.length(), 1)
   let order = plan.orders[0]
   assert_eq(order.receipt_bucket, 2)
   assert_eq(order.release_bucket, 1)
-  assert_eq(order.quantity, 12L)
+  assert_eq(order.quantity, q(12))
   println(
     "  order: LABEL quantity=" +
     order.quantity.to_string() +
@@ -66,8 +77,8 @@ fn main raise {
   )
 
   println("2 policy applied without a plan")
-  for net in [0L, 1L, 11L, 12L] {
-    let rounded = @mrp.order_quantity(net, @mrp.MinimumMultiple(10L, 4L)).unwrap()
+  for net in [0, 1, 11, 12] {
+    let rounded = @mrp.order_quantity(q(net), @mrp.MinimumMultiple(q(10), q(4))).unwrap()
     println(
       "  order_quantity(" +
       net.to_string() +
@@ -81,6 +92,6 @@ fn main raise {
   )
   let json = plan.to_json().stringify()
   assert_true(json.contains("\"quantity\":\"12\""))
-  assert_true(json.contains("\"schema\":\"moon-mrp.plan.v1\""))
+  assert_true(json.contains("\"schema\":\"moon-mrp.plan.v2\""))
   println("  ok")
 }

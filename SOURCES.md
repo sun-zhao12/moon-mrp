@@ -32,10 +32,19 @@ GitHub 仓库搜索实际成功查询：`moonbit "material requirements"`、`moo
 
 MRP 的 BOM 逐层展开、按库存净算、lot-for-lot、提前期抵消等为通用工程方法，背景参考 [Material requirements planning](https://en.wikipedia.org/wiki/Material_requirements_planning)；该链接用于说明通用概念，本次没有逐项验证其当前正文，不宣称算法发明或某 ERP 产品兼容。
 
+0.2.0 新增能力同样按公开文档中的通用做法实现，未复制代码：
+
+- 损耗与良率：组件损耗按 `(1 + scrap)` 放大用量、订单按 `需求 / 良率` 放大，是 MRP/ERP 的常见口径；本库把两者分别放在 `Component.scrap_per_mille` 与 `Item.yield_per_mille`，并在文档中写明取整顺序。
+- 单位换算：BOM 行带用量单位、按换算表折算到基础单位，参考 ERP 的 UOM 转换表概念；本库要求显式提供换算因子，缺失即报错。
+- 批量政策：`LotForLot`、固定批量、倍数、最小批量、期间订货量（POQ）、Min-Max 均为公开的库存补货策略；本库只实现无限产能下的离散周期版本。
+- 提前期异常：Strict 拒绝与 AllowLate 钳制加事件记录，属于计划系统的异常处理口径，不是对某产品的接口兼容。
+
+`docs/scenarios.md` 记录这些口径与本库实现的差异，并给出可复算的对照数字。
+
 本期生产源码与测试独立编写，未复制上游代码、BOM 或企业数据；全部数量与 SKU 自行构造。仅使用 MoonBit 自带标准库。本项目 MIT；相邻项目许可不自动传入本库，因为没有复制或链接其实现。`registry-neighbors.json` 只保存公开调查摘要，不是运行时权威数据。
 
 ## 赛事来源与状态
 
 依据本机 `moonbit-contest-projects` 技能包及其 2026-10-16 口径资料。它包含章程、历史月份与个案反馈摘要，本次没有把它称作在线获取的最新官方全文。历史微信来源此前已发现标题/月份与摘要不完全一致；当前报名额度、截止与材料规则需向官方确认。
 
-本次只做本地开发与源码上传 GitHub，不执行报名、Release、Gitlink 同步或 Mooncakes 发布。申报书是参考草稿，只留本地，最终须由本人核对、理解和改写，不能宣称已满足章程的人工撰写要求。
+本文档描述的是 0.2.0 版本（提交与发布记录见 `LOCAL_VALIDATION.md`）。申报书仍是参考草稿，只留本地，最终须由本人核对、理解和改写，不能宣称已满足章程的人工撰写要求。

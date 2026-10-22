@@ -10,8 +10,19 @@ test "pegs order by item, then bucket, then source kind" {
   let p = @moon-mrp.plan(
     request(
       [item("P"), item("C")],
-      demands=[movement("p-order", "P", 1, 1L), movement("c-order", "C", 1, 1L)],
-      bom=[{ parent: "P", child: "C", units_per: 1L, }],
+      demands=[
+        movement("p-order", "P", 1, q(1)),
+        movement("c-order", "C", 1, q(1)),
+      ],
+      bom=[
+        {
+          parent: "P",
+          child: "C",
+          units_per: q(1),
+          usage_unit: "",
+          scrap_per_mille: 0,
+        },
+      ],
       horizon=2,
     ),
   ).unwrap()
@@ -31,10 +42,10 @@ test "orders are ordered by item and then by receipt bucket" {
     request(
       [item("B"), item("A")],
       demands=[
-        movement("b2", "B", 2, 1L),
-        movement("a2", "A", 2, 1L),
-        movement("b0", "B", 0, 1L),
-        movement("a0", "A", 0, 1L),
+        movement("b2", "B", 2, q(1)),
+        movement("a2", "A", 2, q(1)),
+        movement("b0", "B", 0, q(1)),
+        movement("a0", "A", 0, q(1)),
       ],
       horizon=3,
     ),
@@ -48,9 +59,20 @@ test "orders are ordered by item and then by receipt bucket" {
 ///|
 test "repeated planning of the same request is deterministic" {
   let r = request(
-    [item("K", stock=1L, lead=1, lot=Multiple(5L)), item("R", stock=2L)],
-    demands=[movement("sale", "K", 3, 7L)],
-    bom=[{ parent: "K", child: "R", units_per: 3L, }],
+    [
+      item("K", stock=q(1), lead=1, lot=@moon-mrp.Multiple(q(5))),
+      item("R", stock=q(2)),
+    ],
+    demands=[movement("sale", "K", 3, q(7))],
+    bom=[
+      {
+        parent: "K",
+        child: "R",
+        units_per: q(3),
+        usage_unit: "",
+        scrap_per_mille: 0,
+      },
+    ],
     horizon=5,
   )
   let first = @moon-mrp.plan(r).unwrap()

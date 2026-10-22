@@ -1,1 +1,282 @@
-{"schema":"moon-mrp.plan.v1","horizon":6,"items":[{"item":"KIT","buckets":[{"index":0,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"1"},{"index":1,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"1"},{"index":2,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"1"},{"index":3,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"1"},{"index":4,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"10","projected":"1"},{"index":5,"gross":"9","scheduled":"0","net":"8","planned_receipt":"10","planned_release":"0","projected":"2"}]},{"item":"MODULE","buckets":[{"index":0,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"4"},{"index":1,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"4"},{"index":2,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"16","projected":"4"},{"index":3,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"4"},{"index":4,"gross":"23","scheduled":"5","net":"14","planned_receipt":"16","planned_release":"0","projected":"2"},{"index":5,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"2"}]},{"item":"RAW","buckets":[{"index":0,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"5"},{"index":1,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"43","projected":"5"},{"index":2,"gross":"48","scheduled":"0","net":"43","planned_receipt":"43","planned_release":"0","projected":"0"},{"index":3,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"10","projected":"0"},{"index":4,"gross":"10","scheduled":"0","net":"10","planned_receipt":"10","planned_release":"0","projected":"0"},{"index":5,"gross":"0","scheduled":"0","net":"0","planned_receipt":"0","planned_release":"0","projected":"0"}]}],"orders":[{"item":"KIT","receipt_bucket":5,"release_bucket":4,"quantity":"10"},{"item":"MODULE","receipt_bucket":4,"release_bucket":2,"quantity":"16"},{"item":"RAW","receipt_bucket":2,"release_bucket":1,"quantity":"43"},{"item":"RAW","receipt_bucket":4,"release_bucket":3,"quantity":"10"}],"pegs":[{"item":"KIT","bucket":5,"quantity":"9","source":{"kind":"demand","id":"sales"}},{"item":"MODULE","bucket":4,"quantity":"3","source":{"kind":"demand","id":"spares"}},{"item":"MODULE","bucket":4,"quantity":"20","source":{"kind":"parent_order","parent":"KIT","receipt_bucket":5}},{"item":"RAW","bucket":2,"quantity":"48","source":{"kind":"parent_order","parent":"MODULE","receipt_bucket":4}},{"item":"RAW","bucket":4,"quantity":"10","source":{"kind":"parent_order","parent":"KIT","receipt_bucket":5}}]}
+﻿{
+  "schema": "moon-mrp.plan.v2",
+  "horizon": 6,
+  "items": [
+    {
+      "item": "KIT",
+      "buckets": [
+        {
+          "index": 0,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "1"
+        },
+        {
+          "index": 1,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "1"
+        },
+        {
+          "index": 2,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "1"
+        },
+        {
+          "index": 3,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "1"
+        },
+        {
+          "index": 4,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "10",
+          "projected": "1"
+        },
+        {
+          "index": 5,
+          "gross": "9",
+          "scheduled": "0",
+          "net": "8",
+          "planned_receipt": "10",
+          "received": "10",
+          "planned_release": "0",
+          "projected": "2"
+        }
+      ]
+    },
+    {
+      "item": "MODULE",
+      "buckets": [
+        {
+          "index": 0,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "4"
+        },
+        {
+          "index": 1,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "4"
+        },
+        {
+          "index": 2,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "16",
+          "projected": "4"
+        },
+        {
+          "index": 3,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "4"
+        },
+        {
+          "index": 4,
+          "gross": "23",
+          "scheduled": "5",
+          "net": "14",
+          "planned_receipt": "16",
+          "received": "16",
+          "planned_release": "0",
+          "projected": "2"
+        },
+        {
+          "index": 5,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "2"
+        }
+      ]
+    },
+    {
+      "item": "RAW",
+      "buckets": [
+        {
+          "index": 0,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "5"
+        },
+        {
+          "index": 1,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "43",
+          "projected": "5"
+        },
+        {
+          "index": 2,
+          "gross": "48",
+          "scheduled": "0",
+          "net": "43",
+          "planned_receipt": "43",
+          "received": "43",
+          "planned_release": "0",
+          "projected": "0"
+        },
+        {
+          "index": 3,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "10",
+          "projected": "0"
+        },
+        {
+          "index": 4,
+          "gross": "10",
+          "scheduled": "0",
+          "net": "10",
+          "planned_receipt": "10",
+          "received": "10",
+          "planned_release": "0",
+          "projected": "0"
+        },
+        {
+          "index": 5,
+          "gross": "0",
+          "scheduled": "0",
+          "net": "0",
+          "planned_receipt": "0",
+          "received": "0",
+          "planned_release": "0",
+          "projected": "0"
+        }
+      ]
+    }
+  ],
+  "orders": [
+    {
+      "item": "KIT",
+      "receipt_bucket": 5,
+      "release_bucket": 4,
+      "quantity": "10",
+      "late": false
+    },
+    {
+      "item": "MODULE",
+      "receipt_bucket": 4,
+      "release_bucket": 2,
+      "quantity": "16",
+      "late": false
+    },
+    {
+      "item": "RAW",
+      "receipt_bucket": 2,
+      "release_bucket": 1,
+      "quantity": "43",
+      "late": false
+    },
+    {
+      "item": "RAW",
+      "receipt_bucket": 4,
+      "release_bucket": 3,
+      "quantity": "10",
+      "late": false
+    }
+  ],
+  "pegs": [
+    {
+      "item": "KIT",
+      "bucket": 5,
+      "quantity": "9",
+      "source": {
+        "kind": "demand",
+        "id": "sales"
+      }
+    },
+    {
+      "item": "MODULE",
+      "bucket": 4,
+      "quantity": "3",
+      "source": {
+        "kind": "demand",
+        "id": "spares"
+      }
+    },
+    {
+      "item": "MODULE",
+      "bucket": 4,
+      "quantity": "20",
+      "source": {
+        "kind": "parent_order",
+        "parent": "KIT",
+        "receipt_bucket": 5
+      }
+    },
+    {
+      "item": "RAW",
+      "bucket": 2,
+      "quantity": "48",
+      "source": {
+        "kind": "parent_order",
+        "parent": "MODULE",
+        "receipt_bucket": 4
+      }
+    },
+    {
+      "item": "RAW",
+      "bucket": 4,
+      "quantity": "10",
+      "source": {
+        "kind": "parent_order",
+        "parent": "KIT",
+        "receipt_bucket": 5
+      }
+    }
+  ],
+  "incidents": []
+}

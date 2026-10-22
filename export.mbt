@@ -1,8 +1,9 @@
 ///|
-/// Exact quantities are strings, including values small enough for JS numbers.
+/// Exports the plan as `moon-mrp.plan.v2`. Quantities are decimal strings so
+/// that `0.25` and `1000000000000` survive any JSON consumer unchanged.
 pub fn Plan::to_json(self : Plan) -> Json {
   Json({
-    "schema": Json("moon-mrp.plan.v1"),
+    "schema": Json("moon-mrp.plan.v2"),
     "horizon": Json(self.horizon),
     "items": Json(
       self.items.map(fn(p) {
@@ -16,6 +17,7 @@ pub fn Plan::to_json(self : Plan) -> Json {
                 "scheduled": Json(b.scheduled.to_string()),
                 "net": Json(b.net.to_string()),
                 "planned_receipt": Json(b.planned_receipt.to_string()),
+                "received": Json(b.received.to_string()),
                 "planned_release": Json(b.planned_release.to_string()),
                 "projected": Json(b.projected.to_string()),
               })
@@ -31,6 +33,7 @@ pub fn Plan::to_json(self : Plan) -> Json {
           "receipt_bucket": Json(o.receipt_bucket),
           "release_bucket": Json(o.release_bucket),
           "quantity": Json(o.quantity.to_string()),
+          "late": Json(o.late),
         })
       }),
     ),
@@ -50,6 +53,17 @@ pub fn Plan::to_json(self : Plan) -> Json {
           "bucket": Json(p.bucket),
           "quantity": Json(p.quantity.to_string()),
           "source": source,
+        })
+      }),
+    ),
+    "incidents": Json(
+      self.incidents.map(fn(i) {
+        Json({
+          "kind": Json("lead_time_shortfall"),
+          "item": Json(i.item),
+          "receipt_bucket": Json(i.receipt_bucket),
+          "required_release": Json(i.required_release),
+          "actual_release": Json(i.actual_release),
         })
       }),
     ),
