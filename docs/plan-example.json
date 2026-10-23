@@ -1,5 +1,5 @@
 ﻿{
-  "schema": "moon-mrp.plan.v2",
+  "schema": "moon-mrp.plan.v3",
   "horizon": 6,
   "items": [
     {
@@ -278,5 +278,6 @@
       }
     }
   ],
+  "exceptions": [],
   "incidents": []
 }

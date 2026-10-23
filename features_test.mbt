@@ -243,7 +243,7 @@ test "single-level planning matches an independent simulation" {
                   item(
                     "A",
                     stock=q(stock),
-                    safety=q(safety),
+                    safety=@moon-mrp.SafetyStock::Fixed(q(safety)),
                     yield_rate~,
                     lot=@moon-mrp.Multiple(q(multiple)),
                   ),

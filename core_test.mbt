@@ -12,17 +12,23 @@ fn qm(milli : Int64) -> @moon-mrp.Qty {
 fn item(
   sku : String,
   stock? : @moon-mrp.Qty = @moon-mrp.Qty::zero(),
-  safety? : @moon-mrp.Qty = @moon-mrp.Qty::zero(),
+  safety? : @moon-mrp.SafetyStock = @moon-mrp.SafetyStock::Fixed(
+    @moon-mrp.Qty::zero(),
+  ),
+  max? : @moon-mrp.Qty = @moon-mrp.Qty::zero(),
   lead? : Int = 0,
   yield_rate? : Int = 1000,
   lot? : @moon-mrp.LotRule = @moon-mrp.LotForLot,
   unit? : String = "",
+  phantom? : Bool = false,
 ) -> @moon-mrp.Item {
   {
     sku,
     unit,
     on_hand: stock,
-    safety_stock: safety,
+    safety,
+    max_stock: max,
+    phantom,
     lead_time: lead,
     yield_per_mille: yield_rate,
     lot,
@@ -158,9 +164,10 @@ test "receipts are usable in their bucket and never borrowed from future" {
 ///|
 test "safety stock is an end-of-bucket floor, not repeated demand" {
   let p = @moon-mrp.plan(
-    request([item("A", stock=q(1), safety=q(3))], demands=[
-      movement("d", "A", 2, q(1)),
-    ]),
+    request(
+      [item("A", stock=q(1), safety=@moon-mrp.SafetyStock::Fixed(q(3)))],
+      demands=[movement("d", "A", 2, q(1))],
+    ),
   ).unwrap()
   assert_eq(row(p, "A").buckets[0].planned_receipt, q(2))
   assert_eq(row(p, "A").buckets[1].planned_receipt, @moon-mrp.Qty::zero())
@@ -204,7 +211,14 @@ test "inventory conservation and minimal lot size over 256 independent calendars
     }
     let p = @moon-mrp.plan(
       request(
-        [item("A", stock=q(2), safety=q(1), lot=@moon-mrp.Multiple(q(3)))],
+        [
+          item(
+            "A",
+            stock=q(2),
+            safety=@moon-mrp.SafetyStock::Fixed(q(1)),
+            lot=@moon-mrp.Multiple(q(3)),
+          ),
+        ],
         demands~,
         horizon=4,
       ),
@@ -496,7 +510,7 @@ test "JSON export preserves decimals and escapes identifiers" {
   ).unwrap()
   let json = p.to_json()
   assert_true(json.stringify().contains("1000000000000"))
-  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v2"))
+  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v3"))
   let orders = match field(json, "orders") {
     Array(a) => a
     _ => abort("array expected")

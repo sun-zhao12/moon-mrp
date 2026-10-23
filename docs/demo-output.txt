@@ -18,4 +18,9 @@
   PART: quantity=3; release=0; receipt=1; late
   incident: PART receipt=1 required_release=-1 actual_release=0
 cycle rejected=true
+6 phantom BOM, percent safety stock and reorder point
+  FRAME: quantity=20; release=1; receipt=1
+  excess: BOLT bucket=0 projected=100 max=50
+  excess: BOLT bucket=1 projected=88 max=50
+  excess: BOLT bucket=2 projected=88 max=50
 assembly JSON

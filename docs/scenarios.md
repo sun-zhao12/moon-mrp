@@ -110,3 +110,46 @@
 ## 10. 场景九：独立模拟对照
 
 `features_test.mbt` 中的「single-level planning matches an independent simulation」对需求（0/1/3/7/12/30）× 期初（0/2/5）× 安全库存（0/1/4）× 良率（100%/90%/70%）× 倍数（1/5）共 324 组组合，用一份独立实现的库存递推逐期核对 `net`、订单数量、入库量与结存。这是与主实现的独立路径，不共享代码。
+## 11. 场景十：按需求天数的安全库存
+
+输入：A 无期初，SafetyStock::DaysOfDemand(2)，horizon 4，每期需求 10。
+
+平均需求 10，安全库存 20。第 0 期需 10 + 20 = 30，之后每期补 10，期末结存始终 20。
+
+验证：capability_test.mbt「days-of-demand safety stock follows the horizon average」。
+
+## 12. 场景十一：按需求百分比的安全库存
+
+输入：A 无期初，SafetyStock::PercentOfDemand(50)，第 1 期需求 10。
+
+安全库存 5，净需求 10 + 5 = 15，订单 15。
+
+验证：capability_test.mbt「percent-of-demand safety stock is a fraction of the bucket gross」。
+
+## 13. 场景十二：再订货点 + 再订货量
+
+输入：A 期初 10，ReorderPoint(level=5, quantity=20)，第 1 期需求 8。
+
+扣减需求后结存 2 < 5，触发补货 20（大于净需求 0），期末结存 22。
+
+验证：capability_test.mbt「reorder point orders its quantity when the balance dips」。
+
+## 14. 场景十三：虚拟件透传
+
+输入：SUB 为虚拟件，SUB → BOLT 用量 3；SUB 第 1 期需求 4。
+
+期望：SUB 不出订单；BOLT 第 1 期毛需求 12，按自身政策下单；SUB 的 buckets 全为 0。
+
+验证：capability_test.mbt「phantom items pass demand straight to their components」，示例见 examples/demo 第 6 段。
+
+## 15. 场景十四：库存过量异常
+
+输入：A 期初 100、max_stock = 50、horizon 2、无需求。
+
+期望：Plan.exceptions 两期各一条，projected = 100、maximum = 50。
+
+验证：capability_test.mbt「excess inventory becomes a stock exception」。
+
+## 16. 与 frePPLe / ERPNext 的逐项对照
+
+完整矩阵（需求、库存政策、BOM、计划引擎、输出、明确边界）见 [docs/capability.md](capability.md)。

@@ -2,6 +2,25 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [0.3.0] - 2026-10-23
+
+按第二轮评审意见（以 frePPLe 与 ERPNext MRP 为功能完整性参考）补齐计划内核缺口。
+
+### Added
+
+- SafetyStock::{Fixed, DaysOfDemand, PercentOfDemand}：安全库存可按固定值、需求天数或当期满需求百分比计算。
+- Item.max_stock：库存上限，超过时逐期产生 StockException，对应 frePPLe 的 excess inventory 工作流。
+- LotRule::ReorderPoint(level, quantity)：再订货点 + 再订货量规则（ERPNext 的 reorder level + reorder qty）。
+- Item.phantom：虚拟件透传，不持有库存、不生成订单，需求在同一周期展开给子件。
+- Plan.exceptions：库存过量异常清单；JSON 升为 moon-mrp.plan.v3。
+- docs/capability.md：按 frePPLe features 与 ERPNext MRP 文档逐项对照的能力矩阵，含明确边界。
+- 测试扩到 56 项/目标，新增安全库存策略、再订货点、虚拟件、过量异常与示例第 6 段。
+
+### Changed
+
+- Item.safety_stock: Qty 改为 Item.safety: SafetyStock；Item 增加 max_stock、phantom 字段。
+- 安全库存改为逐期计算（safety(t)），其余净算顺序不变。
+- README 增加能力矩阵链接、七类工作流与 0.3.0 迁移说明。
 ## [0.2.0] - 2026-10-22
 
 针对首轮评审意见（功能范围偏窄、缺少小数用量/单位换算/损耗与良率/提前期异常处理/批量策略、规模上限过小）的重构版本。

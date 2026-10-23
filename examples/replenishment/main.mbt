@@ -16,7 +16,9 @@ fn main raise {
         sku: "LABEL",
         unit: "EA",
         on_hand: q(3),
-        safety_stock: q(2),
+        safety: @mrp.SafetyStock::Fixed(q(2)),
+        max_stock: @mrp.Qty::zero(),
+        phantom: false,
         lead_time: 1,
         yield_per_mille: 1000,
         lot: @mrp.MinimumMultiple(q(10), q(4)),
@@ -92,6 +94,6 @@ fn main raise {
   )
   let json = plan.to_json().stringify()
   assert_true(json.contains("\"quantity\":\"12\""))
-  assert_true(json.contains("\"schema\":\"moon-mrp.plan.v2\""))
+  assert_true(json.contains("\"schema\":\"moon-mrp.plan.v3\""))
   println("  ok")
 }

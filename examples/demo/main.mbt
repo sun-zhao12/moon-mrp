@@ -12,17 +12,21 @@ fn qm(milli : Int64) -> @mrp.Qty {
 fn item(
   sku : String,
   stock? : @mrp.Qty = @mrp.Qty::zero(),
-  safety? : @mrp.Qty = @mrp.Qty::zero(),
+  safety? : @mrp.SafetyStock = @mrp.SafetyStock::Fixed(@mrp.Qty::zero()),
+  max? : @mrp.Qty = @mrp.Qty::zero(),
   lead? : Int = 0,
   yield_rate? : Int = 1000,
   lot? : @mrp.LotRule = @mrp.LotForLot,
   unit? : String = "",
+  phantom? : Bool = false,
 ) -> @mrp.Item {
   {
     sku,
     unit,
     on_hand: stock,
-    safety_stock: safety,
+    safety,
+    max_stock: max,
+    phantom,
     lead_time: lead,
     yield_per_mille: yield_rate,
     lot,
@@ -106,7 +110,7 @@ fn main {
       item(
         "LABEL",
         stock=q(3),
-        safety=q(2),
+        safety=@mrp.SafetyStock::Fixed(q(2)),
         lot=@mrp.MinimumMultiple(q(10), q(4)),
       ),
     ],
@@ -216,6 +220,49 @@ fn main {
     "cycle rejected=" +
     (if @mrp.plan(cycle) is Err(_) { "true" } else { "false" }),
   )
+  let policy_request : @mrp.Request = {
+    horizon: 3,
+    items: [
+      item("SUB", phantom=true),
+      item(
+        "BOLT",
+        stock=q(100),
+        max=q(50),
+        safety=@mrp.SafetyStock::PercentOfDemand(20),
+      ),
+      item("FRAME", stock=q(10), lot=@mrp.ReorderPoint(q(5), q(20))),
+    ],
+    bom: [
+      {
+        parent: "SUB",
+        child: "BOLT",
+        units_per: q(3),
+        usage_unit: "",
+        scrap_per_mille: 0,
+      },
+    ],
+    demands: [
+      demand("sub-order", "SUB", 1, q(4)),
+      demand("frame-order", "FRAME", 1, q(8)),
+    ],
+    receipts: [],
+    conversions: [],
+    policy: @mrp.Strict,
+  }
+  let policy_plan = @mrp.plan(policy_request).unwrap()
+  show("6 phantom BOM, percent safety stock and reorder point", policy_plan)
+  for exception in policy_plan.exceptions {
+    println(
+      "  excess: " +
+      exception.item +
+      " bucket=" +
+      exception.bucket.to_string() +
+      " projected=" +
+      exception.projected.to_string() +
+      " max=" +
+      exception.maximum.to_string(),
+    )
+  }
   println("assembly JSON")
   println(plan.to_json().stringify())
 }

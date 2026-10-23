@@ -52,10 +52,12 @@ pub(all) struct Item {
   sku : String
   unit : String
   on_hand : Qty
-  safety_stock : Qty
+  safety : SafetyStock
+  max_stock : Qty
   lead_time : Int
   yield_per_mille : Int
   lot : LotRule
+  phantom : Bool
 } derive(Eq, @debug.Debug)
 pub fn Item::equal(Self, Self) -> Bool
 pub fn Item::not_equal(Self, Self) -> Bool
@@ -76,6 +78,7 @@ pub(all) enum LotRule {
   MinimumMultiple(Qty, Qty)
   PeriodOrder(Int)
   MinMax(Qty, Qty)
+  ReorderPoint(Qty, Qty)
 } derive(Eq, @debug.Debug)
 pub fn LotRule::equal(Self, Self) -> Bool
 pub fn LotRule::not_equal(Self, Self) -> Bool
@@ -118,6 +121,7 @@ pub(all) struct Plan {
   orders : Array[Order]
   pegs : Array[Peg]
   incidents : Array[Incident]
+  exceptions : Array[StockException]
 } derive(Eq, @debug.Debug)
 pub fn Plan::equal(Self, Self) -> Bool
 pub fn Plan::not_equal(Self, Self) -> Bool
@@ -177,6 +181,15 @@ pub(all) struct Request {
 } derive(@debug.Debug)
 pub fn Request::to_repr(Self) -> @debug.Repr
 
+pub(all) enum SafetyStock {
+  Fixed(Qty)
+  DaysOfDemand(Int)
+  PercentOfDemand(Int)
+} derive(Eq, @debug.Debug)
+pub fn SafetyStock::equal(Self, Self) -> Bool
+pub fn SafetyStock::not_equal(Self, Self) -> Bool
+pub fn SafetyStock::to_repr(Self) -> @debug.Repr
+
 pub(all) enum Source {
   Demand(String)
   ParentOrder(String, Int)
@@ -184,6 +197,16 @@ pub(all) enum Source {
 pub fn Source::equal(Self, Self) -> Bool
 pub fn Source::not_equal(Self, Self) -> Bool
 pub fn Source::to_repr(Self) -> @debug.Repr
+
+pub(all) struct StockException {
+  item : String
+  bucket : Int
+  projected : Qty
+  maximum : Qty
+} derive(Eq, @debug.Debug)
+pub fn StockException::equal(Self, Self) -> Bool
+pub fn StockException::not_equal(Self, Self) -> Bool
+pub fn StockException::to_repr(Self) -> @debug.Repr
 
 pub(all) struct UnitConversion {
   from : String

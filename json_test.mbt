@@ -9,7 +9,7 @@ test "bucket and order objects expose every documented field" {
     ),
   ).unwrap()
   let json = p.to_json()
-  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v2"))
+  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v3"))
   assert_eq(field(json, "horizon"), Json(3))
   let items = match field(json, "items") {
     Array(a) => a
@@ -91,7 +91,7 @@ test "peg sources separate independent demand from parent orders" {
 test "an empty demand set still exports schema and empty arrays" {
   let p = @moon-mrp.plan(request([item("A")], horizon=2)).unwrap()
   let json = p.to_json()
-  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v2"))
+  assert_eq(field(json, "schema"), Json("moon-mrp.plan.v3"))
   match field(json, "orders") {
     Array(a) => assert_eq(a.length(), 0)
     _ => abort("array expected")

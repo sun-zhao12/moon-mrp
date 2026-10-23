@@ -29,7 +29,7 @@
 对每个物料按拓扑序（父项先于子项）：
 
 1. `available = projected[t-1] + scheduled[t]`（到货只在所属期可用）
-2. `needed = gross[t] + safety_stock`（安全库存是期末下限，不重复计入需求）
+2. `needed = gross[t] + safety(t)`（按第 12 节的策略计算，安全库存是期末下限，不重复计入需求）
 3. `net[t] = max(0, needed - available)`
 4. 求订单投产数量 `S_t`（第 4 节：批量政策、良率、损耗、单位换算）
 5. `received_t = floor(S_t * yield / 1000)`
@@ -48,6 +48,7 @@
 | `MinimumMultiple(min, m)` | 先满足 `min`，再向上取到 `m` 的倍数 |
 | `PeriodOrder(n)` | 一次订单覆盖 `t..t+n-1` 的净需求；`order_quantity` 无法预知日历，因此返回净需求本身 |
 | `MinMax(min, max)` | 当 `available - gross[t] < min` 时补到 `max`；`order_quantity` 返回 `max(net, max)` |
+| `ReorderPoint(level, quantity)` | 当 `available - gross[t] < level` 时下单 `max(net, quantity)`；`order_quantity` 返回 `max(net, quantity)` |
 
 计划内的 `S_t` 计算顺序是：**先按良率放大，再按批量政策取整**（`PeriodOrder`/`MinMax` 自身已完成批量聚合，不再叠加取整）。
 
@@ -108,7 +109,7 @@ for k = t .. min(t+n-1, horizon-1):
 | --- | --- |
 | `InvalidHorizon` | `horizon < 1` 或 `> 1024` |
 | `SizeLimit` | 物料 0 或 >4096、BOM 边 >100000、需求或到货 >100000 |
-| `InvalidItem` | SKU 为空、数量越界、提前期不在 `0..4096`、良率不在 `1..1000`、批量政策非法 |
+| `InvalidItem` | SKU 为空、数量越界、提前期不在 `0..4096`、良率不在 `1..1000`、批量政策非法、安全库存策略非法、虚拟件带库存/安全库存/上限/到货 |
 | `DuplicateItem` | 同一 SKU 两次 |
 | `UnknownItem` | BOM 或单据引用不存在的物料 |
 | `InvalidComponent` | 父子相同、`units_per <= 0`、损耗不在 `0..1000` |
@@ -125,7 +126,7 @@ for k = t .. min(t+n-1, horizon-1):
 - 物料按 SKU 的 UTF-16 字典序；订单按 SKU、收货期；Peg 按 SKU、周期、来源（独立需求先于父项订单）；incidents 按 SKU、收货期。
 - 输入行顺序不影响结果；`plan` 复制输入数组后排序，不修改调用方数据。
 - 同一输入重复调用结果相同；`Plan`、`ItemPlan`、`Bucket`、`Order`、`Peg`、`Incident`、`PlanningError` 都实现 `Eq` 与 `Debug`。
-- `Plan::to_json` 输出 `moon-mrp.plan.v2`：数量为十进制字符串（如 `"0.25"`、`"25.268"`），订单带 `late` 布尔，`incidents` 为数组。
+- `Plan::to_json` 输出 `moon-mrp.plan.v3`：数量为十进制字符串（如 `"0.25"`、`"25.268"`），订单带 `late` 布尔，`incidents` 与 `exceptions` 为数组。
 
 ## 11. 规模上限
 
@@ -137,3 +138,36 @@ for k = t .. min(t+n-1, horizon-1):
 | 需求 / 到货 | 各 100000 | ID 分别在各自集合内唯一 |
 | 提前期 | 4096 | 超出周期范围时按策略报错或钳制 |
 | 数量 | `10^12` 单位 | 全部中间值受 Int64 溢出检查保护 |
+## 12. 安全库存策略
+
+Item.safety 决定每期期末下限：
+
+| 策略 | 计算 |
+| --- | --- |
+| Fixed(q) | 每期固定 q |
+| DaysOfDemand(n) | 全周期平均毛需求 × 
+（向上取整），
+ 为周期数 |
+| PercentOfDemand(p) | 当毛需求 × p%（向上取整），p 取  ..100 |
+
+安全库存仍是期末下限：
+eeded = gross + safety(t)，不会逐期累加。DaysOfDemand 用整个 horizon 的平均需求，而不是滚动历史（本库无历史窗口）。
+
+## 13. 虚拟件（phantom）
+
+Item.phantom = true 表示透传件：不持有库存、不生成订单、不做批量。
+
+- 它的毛需求在同一周期按 BOM 直接展开给子件（沿用损耗、用量与换算规则）。
+- 虚拟件自身仍输出逐期 Bucket，但 
+et/receipt/received/release/projected 恒为 0。
+- 为保证语义自洽，虚拟件不允许带期初库存、安全库存、上限或到货，违反时返回 InvalidItem。
+
+## 14. 库存异常
+
+Plan.exceptions 报告超过 Item.max_stock 的期末结存：
+
+`
+{ item, bucket, projected, maximum }
+`
+
+max_stock = 0 表示不启用该检查。无限产能模型下不会出现"缺料"，物料不足表现为 late 订单与 Plan.incidents，不写进 exceptions，避免把两类问题混在一起。

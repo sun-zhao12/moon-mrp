@@ -8,6 +8,9 @@
 /// - `PeriodOrder(n)` covers the net requirements of the next `n` buckets.
 /// - `MinMax(minimum, maximum)` replenishes up to `maximum` whenever the
 ///   projected balance would fall below `minimum`.
+/// - `ReorderPoint(level, quantity)` uses the ERP "reorder level + reorder
+///   quantity" rule: when the balance after demand falls below `level`, order
+///   `quantity` (or the net requirement when that is larger).
 pub(all) enum LotRule {
   LotForLot
   FixedQuantity(Qty)
@@ -15,21 +18,40 @@ pub(all) enum LotRule {
   MinimumMultiple(Qty, Qty)
   PeriodOrder(Int)
   MinMax(Qty, Qty)
+  ReorderPoint(Qty, Qty)
+} derive(Eq, @debug.Debug)
+
+///|
+/// How the per-bucket safety floor is derived.
+///
+/// - `Fixed(q)` is a constant floor.
+/// - `DaysOfDemand(n)` is `n` buckets of average gross demand.
+/// - `PercentOfDemand(p)` is `p` percent of the bucket's gross demand.
+pub(all) enum SafetyStock {
+  Fixed(Qty)
+  DaysOfDemand(Int)
+  PercentOfDemand(Int)
 } derive(Eq, @debug.Debug)
 
 ///|
 /// One planning item. `unit` is a label only; BOM rows that use a different
 /// label must be converted through `Request.conversions`.
+///
+/// A `phantom` item is a pass-through: it never carries stock or orders, its
+/// gross demand is exploded into its components in the same bucket.
 pub(all) struct Item {
   sku : String
   unit : String
   on_hand : Qty
-  safety_stock : Qty
+  safety : SafetyStock
+  /// Upper inventory target; `Qty::zero()` disables excess reporting.
+  max_stock : Qty
   lead_time : Int
   /// Usable fraction of a planned order, in per-mille: `900` means the order
   /// yields 90% good units and must be inflated accordingly.
   yield_per_mille : Int
   lot : LotRule
+  phantom : Bool
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -141,6 +163,16 @@ pub(all) struct Incident {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// Excess-inventory exception: the projected balance exceeds `Item.max_stock`
+/// so a planner can review overstock (the frePPLe "excess inventory" workflow).
+pub(all) struct StockException {
+  item : String
+  bucket : Int
+  projected : Qty
+  maximum : Qty
+} derive(Eq, @debug.Debug)
+
+///|
 /// Plans contain no promises about finite machine or supplier capacity.
 pub(all) struct Plan {
   horizon : Int
@@ -148,6 +180,7 @@ pub(all) struct Plan {
   orders : Array[Order]
   pegs : Array[Peg]
   incidents : Array[Incident]
+  exceptions : Array[StockException]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -172,6 +205,18 @@ pub extend LotRule with Eq::{equal, not_equal}
 
 ///|
 pub extend LotRule with @debug.Debug::{to_repr}
+
+///|
+pub extend SafetyStock with Eq::{equal, not_equal}
+
+///|
+pub extend SafetyStock with @debug.Debug::{to_repr}
+
+///|
+pub extend StockException with Eq::{equal, not_equal}
+
+///|
+pub extend StockException with @debug.Debug::{to_repr}
 
 ///|
 pub extend Item with Eq::{equal, not_equal}

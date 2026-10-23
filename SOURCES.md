@@ -48,3 +48,12 @@ MRP 的 BOM 逐层展开、按库存净算、lot-for-lot、提前期抵消等为
 依据本机 `moonbit-contest-projects` 技能包及其 2026-10-16 口径资料。它包含章程、历史月份与个案反馈摘要，本次没有把它称作在线获取的最新官方全文。历史微信来源此前已发现标题/月份与摘要不完全一致；当前报名额度、截止与材料规则需向官方确认。
 
 本文档描述的是 0.2.0 版本（提交与发布记录见 `LOCAL_VALIDATION.md`）。申报书仍是参考草稿，只留本地，最终须由本人核对、理解和改写，不能宣称已满足章程的人工撰写要求。
+
+## 评审参考与逐项对照
+
+第二轮评审建议以两份公开文档作为功能完整性参考，本次于 2026-10-23 实际读取：
+
+- frePPLe Key features：<https://frepple.com/docs/current/features.html>
+- ERPNext MRP：<https://docs.frappe.io/erpnext/material-requirements-planning-mrp>
+
+docs/capability.md 按这两份文档的条目逐项列出本库覆盖情况与明确边界。只作为功能范围参考，未复制其代码或数据；本库实现为独立编写的 MoonBit 代码。

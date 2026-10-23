@@ -47,6 +47,65 @@ fn lot_valid(lot : LotRule) -> Bool {
       minimum.milli >= 0L &&
       positive_qty(maximum.milli) &&
       minimum.milli <= maximum.milli
+    ReorderPoint(level, quantity) =>
+      level.milli >= 0L && qty_ok(level.milli) && positive_qty(quantity.milli)
+  }
+}
+
+///|
+fn safety_valid(safety : SafetyStock) -> Bool {
+  match safety {
+    Fixed(q) => qty_ok(q.milli)
+    DaysOfDemand(periods) => periods >= 0 && periods <= max_horizon
+    PercentOfDemand(percent) => percent >= 0 && percent <= 100
+  }
+}
+
+///|
+fn safety_is_zero(safety : SafetyStock) -> Bool {
+  match safety {
+    Fixed(q) => q.milli == 0L
+    DaysOfDemand(periods) => periods == 0
+    PercentOfDemand(percent) => percent == 0
+  }
+}
+
+///|
+/// Per-bucket safety floor. Fixed is constant, PercentOfDemand follows the
+/// bucket gross, DaysOfDemand uses the horizon average gross demand.
+fn safety_target(
+  item : Item,
+  t : Int,
+  gross : Array[Int64],
+  horizon : Int,
+) -> Result[Int64, Unit] {
+  match item.safety {
+    Fixed(q) => Ok(q.milli)
+    PercentOfDemand(percent) => mul_div_ceil(gross[t], percent.to_int64(), 100L)
+    DaysOfDemand(periods) => {
+      if periods == 0 {
+        return Ok(0L)
+      }
+      let mut total = 0L
+      for g in gross {
+        if total > int64_max - g {
+          return Err(())
+        }
+        total = total + g
+      }
+      let horizon64 = horizon.to_int64()
+      let average = total / horizon64 +
+        (if total % horizon64 == 0L { 0L } else { 1L })
+      let target = match mul_div_ceil(average, periods.to_int64(), 1L) {
+        Ok(value) => value
+        Err(_) => return Err(())
+      }
+      if qty_ok(target) {
+        Ok(target)
+      } else {
+        Err(())
+      }
+    }
   }
 }
 
@@ -73,6 +132,12 @@ fn apply_lot(q : Int64, lot : LotRule) -> Result[Int64, Unit] {
       ceil_to_multiple(target, m.milli)
     }
     PeriodOrder(_) => Ok(q)
+    ReorderPoint(_, quantity) =>
+      if q < quantity.milli {
+        Ok(quantity.milli)
+      } else {
+        Ok(q)
+      }
     MinMax(_, maximum) =>
       if q < maximum.milli {
         Ok(maximum.milli)
@@ -234,7 +299,16 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
   for i, item in items {
     if item.sku == "" ||
       !qty_ok(item.on_hand.milli) ||
-      !qty_ok(item.safety_stock.milli) ||
+      !qty_ok(item.max_stock.milli) ||
+      !safety_valid(item.safety) ||
+      (
+        item.phantom &&
+        (
+          item.on_hand.milli != 0L ||
+          item.max_stock.milli != 0L ||
+          !safety_is_zero(item.safety)
+        )
+      ) ||
       item.lead_time < 0 ||
       item.lead_time > max_lead_time ||
       item.yield_per_mille < 1 ||
@@ -372,8 +446,50 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
   let plans : Array[ItemPlan] = []
   let orders : Array[Order] = []
   let incidents : Array[Incident] = []
+  let exceptions : Array[StockException] = []
   for i in order {
     let item = items[i]
+    if item.phantom {
+      let pass_through : Array[Bucket] = []
+      for t in 0..<h {
+        if scheduled[i][t] > 0L {
+          return Err(InvalidItem(item.sku))
+        }
+        if gross[i][t] > 0L {
+          for child in children[i] {
+            let (child_index, units, scrap, conversion) = child
+            let demand = match
+              component_demand(gross[i][t], units, scrap, conversion) {
+              Ok(value) => value
+              Err(_) => return Err(QuantityLimit(items[child_index].sku))
+            }
+            let total = gross[child_index][t] + demand
+            if total > qty_limit_milli {
+              return Err(QuantityLimit(items[child_index].sku))
+            }
+            gross[child_index][t] = total
+            pegs.push({
+              item: items[child_index].sku,
+              bucket: t,
+              quantity: Qty::milli(demand),
+              source: ParentOrder(item.sku, t),
+            })
+          }
+        }
+        pass_through.push({
+          index: t,
+          gross: Qty::milli(gross[i][t]),
+          scheduled: Qty::milli(scheduled[i][t]),
+          net: Qty::zero(),
+          planned_receipt: Qty::zero(),
+          received: Qty::zero(),
+          planned_release: Qty::zero(),
+          projected: Qty::zero(),
+        })
+      }
+      plans.push({ item: item.sku, buckets: pass_through, })
+      continue
+    }
     let releases = Array::make(h, 0L)
     let buckets : Array[Bucket] = []
     let mut available = item.on_hand.milli
@@ -382,7 +498,11 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
       if available > qty_limit_milli {
         return Err(QuantityLimit(item.sku))
       }
-      let needed = gross[i][t] + item.safety_stock.milli
+      let safety = match safety_target(item, t, gross[i], h) {
+        Ok(value) => value
+        Err(_) => return Err(QuantityLimit(item.sku))
+      }
+      let needed = gross[i][t] + safety
       if needed > qty_limit_milli {
         return Err(QuantityLimit(item.sku))
       }
@@ -399,6 +519,19 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
             required_good = target
           }
         }
+        ReorderPoint(level, quantity) => {
+          let after_demand = available - gross[i][t]
+          if after_demand < level.milli {
+            required_good = if net > quantity.milli {
+              net
+            } else {
+              quantity.milli
+            }
+            if required_good > qty_limit_milli {
+              return Err(QuantityLimit(item.sku))
+            }
+          }
+        }
         PeriodOrder(periods) =>
           if net > 0L {
             match
@@ -409,7 +542,7 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
                 h,
                 gross[i],
                 scheduled[i],
-                item.safety_stock.milli,
+                safety,
               ) {
               Ok(value) => required_good = value
               Err(_) => return Err(QuantityLimit(item.sku))
@@ -428,6 +561,7 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
         match item.lot {
           PeriodOrder(_) => ()
           MinMax(_, _) => ()
+          ReorderPoint(_, _) => ()
           _ =>
             start = match apply_lot(start, item.lot) {
               Ok(value) => value
@@ -492,6 +626,14 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
       if available > qty_limit_milli {
         return Err(QuantityLimit(item.sku))
       }
+      if item.max_stock.milli > 0L && available > item.max_stock.milli {
+        exceptions.push({
+          item: item.sku,
+          bucket: t,
+          projected: Qty::milli(available),
+          maximum: item.max_stock,
+        })
+      }
       buckets.push({
         index: t,
         gross: Qty::milli(gross[i][t]),
@@ -542,5 +684,12 @@ pub fn plan(request : Request) -> Result[Plan, PlanningError] {
       a.item.lexical_compare(b.item)
     }
   })
-  Ok({ horizon: h, items: plans, orders, pegs, incidents, })
+  exceptions.sort_by(fn(a, b) {
+    if a.item == b.item {
+      a.bucket.compare(b.bucket)
+    } else {
+      a.item.lexical_compare(b.item)
+    }
+  })
+  Ok({ horizon: h, items: plans, orders, pegs, incidents, exceptions, })
 }

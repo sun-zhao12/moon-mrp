@@ -1,9 +1,9 @@
 ///|
-/// Exports the plan as `moon-mrp.plan.v2`. Quantities are decimal strings so
+/// Exports the plan as `moon-mrp.plan.v3`. Quantities are decimal strings so
 /// that `0.25` and `1000000000000` survive any JSON consumer unchanged.
 pub fn Plan::to_json(self : Plan) -> Json {
   Json({
-    "schema": Json("moon-mrp.plan.v2"),
+    "schema": Json("moon-mrp.plan.v3"),
     "horizon": Json(self.horizon),
     "items": Json(
       self.items.map(fn(p) {
@@ -53,6 +53,16 @@ pub fn Plan::to_json(self : Plan) -> Json {
           "bucket": Json(p.bucket),
           "quantity": Json(p.quantity.to_string()),
           "source": source,
+        })
+      }),
+    ),
+    "exceptions": Json(
+      self.exceptions.map(fn(e) {
+        Json({
+          "item": Json(e.item),
+          "bucket": Json(e.bucket),
+          "projected": Json(e.projected.to_string()),
+          "maximum": Json(e.maximum.to_string()),
         })
       }),
     ),
